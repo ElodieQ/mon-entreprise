@@ -46,16 +46,14 @@ export const parse = (rules, rule, parsedRules) => rawNode => {
 	if (rawNode == null) {
 		syntaxError(
 			rule.dottedName,
-			`
-Une des valeurs de la formule est vide.
+			`Une des valeurs de la formule est vide.
 Vérifiez que tous les champs à droite des deux points sont remplis`
 		)
 	}
 	if (typeof rawNode === 'boolean') {
 		syntaxError(
 			rule.dottedName,
-			`
-Les valeure booléenes true / false ne sont acceptée.
+			`Les valeure booléenes true / false ne sont acceptée.
 Utilisez leur contrepartie française : 'oui' / 'non'`
 		)
 	}

@@ -2,8 +2,9 @@ import baremeIr from '!!raw-loader!./exemples/bareme-ir.yaml'
 import douche from '!!raw-loader!./exemples/douche.yaml'
 import { ControlledEditor } from '@monaco-editor/react'
 import { formatValue } from 'Engine/format'
-import Engine from 'Engine/index'
+import { Engine } from 'Engine/index'
 import { buildFlatRules } from 'Engine/rules'
+import { Analysis } from 'Engine/traverse'
 import { safeLoad } from 'js-yaml'
 import React, { useRef, useState } from 'react'
 import emoji from 'react-easy-emoji'
@@ -53,6 +54,7 @@ export default function SafeStudio() {
 		</div>
 	)
 }
+
 export function Studio() {
 	const { search } = useLocation()
 	const currentExample = new URLSearchParams(search ?? '').get('exemple')
@@ -63,7 +65,9 @@ export function Studio() {
 	)
 	const [targets, setTargets] = useState<string[]>([])
 	const [currentTarget, setCurrentTarget] = useState('')
-	const [analysis, setAnalysis] = useState()
+	const [analysis, setAnalysis] = useState<Analysis>()
+	const [error, setError] = useState<Error>()
+	const [warnings, setWarnings] = useState<string[]>([])
 	const engine = useRef<any>(null)
 
 	try {
@@ -71,12 +75,17 @@ export function Studio() {
 	} catch {}
 
 	function updateResult() {
-		engine.current = new Engine.Engine(buildFlatRules(safeLoad(editorValue)))
+		engine.current = new Engine(buildFlatRules(safeLoad(editorValue)))
 		engine.current.evaluate(
 			[targets.includes(currentTarget) ? currentTarget : targets[0]],
 			{ defaultUnits: [], situation: {} }
 		)
+		console.log(engine.current.getLastEvaluationExplanations())
 		setAnalysis(engine.current.getLastEvaluationExplanations()?.targets?.[0])
+		setError(engine.current.getLastError())
+		setWarnings(
+			engine.current.getLastEvaluationExplanations()?.cache._meta.warnings
+		)
 	}
 
 	return (
@@ -97,6 +106,31 @@ export function Studio() {
 					padding: 30px 20px;
 				`}
 			>
+				{error && (
+					<div
+						css={`
+							background: lightYellow;
+							padding: 20px;
+							border-radius: 5px;
+						`}
+					>
+						{nl2br(error.message)}
+					</div>
+				)}
+
+				{warnings?.map((message, index) => (
+					<div
+						key={index}
+						css={`
+							background: lightYellow;
+							padding: 20px;
+							border-radius: 5px;
+						`}
+					>
+						{nl2br(message)}
+					</div>
+				))}
+
 				<div
 					css={`
 						background: var(--lighterColor);
@@ -197,4 +231,19 @@ class ErrorBoundary extends React.Component {
 			</>
 		)
 	}
+}
+
+var newlineRegex = /(\r\n|\r|\n)/g
+
+function nl2br(str: string) {
+	if (typeof str !== 'string') {
+		return str
+	}
+
+	return str.split(newlineRegex).map(function(line, index) {
+		if (line.match(newlineRegex)) {
+			return React.createElement('br', { key: index })
+		}
+		return line
+	})
 }

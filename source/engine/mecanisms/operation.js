@@ -31,7 +31,7 @@ export default (k, operatorFunction, symbol) => (recurse, k, v) => {
 				}
 			} catch (e) {
 				typeWarning(
-					cache._meta.contextRule,
+					cache._meta,
 					`Dans l'expression '${
 						node.operator
 					}', la partie gauche (unité: ${serializeUnit(
@@ -52,7 +52,7 @@ export default (k, operatorFunction, symbol) => (recurse, k, v) => {
 			)
 		} catch (e) {
 			typeWarning(
-				cache._meta.contextRule,
+				cache._meta,
 				`Impossible de convertir une des valeur en date`,
 				e
 			)

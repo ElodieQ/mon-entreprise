@@ -1,4 +1,5 @@
 import { mergeAllMissing } from 'Engine/evaluation'
+import { Analysis } from 'Engine/traverse'
 import { evolve } from 'ramda'
 import { evaluationError, typeWarning } from '../error'
 import { convertUnit, inferUnit } from '../units'
@@ -20,7 +21,7 @@ export const parseTranches = (parse, tranches) => {
 export function evaluatePlafondUntilActiveTranche(
 	evaluate,
 	{ multiplicateur, assiette, parsedTranches },
-	cache
+	cache: Analysis['cache']
 ) {
 	return parsedTranches.reduce(
 		([tranches, activeTrancheFound], parsedTranche, i: number) => {
@@ -63,7 +64,7 @@ export function evaluatePlafondUntilActiveTranche(
 					  )
 			} catch (e) {
 				typeWarning(
-					cache._meta.contextRule,
+					cache._meta,
 					`L'unité du plafond de la tranche n°${i +
 						1}  n'est pas compatible avec celle l'assiette`,
 					e
@@ -73,7 +74,7 @@ export function evaluatePlafondUntilActiveTranche(
 			let plancherValue = tranches[i - 1] ? tranches[i - 1].plafondValue : 0
 			if (!!tranches[i - 1] && plafondValue <= plancherValue) {
 				evaluationError(
-					cache._meta.contextRule,
+					cache._meta,
 					`Le plafond de la tranche n°${i +
 						1} a une valeur inférieure à celui de la tranche précédente`
 				)

@@ -398,7 +398,7 @@ export let mecanismReduction = (recurse, k, v) => {
 				}
 			} catch (e) {
 				typeWarning(
-					cache._meta.contextRule,
+					cache._meta,
 					"Impossible de convertir les unités de l'allègement entre elles",
 					e
 				)
@@ -482,7 +482,7 @@ export let mecanismProduct = (recurse, k, v) => {
 				plafond = convertNodeToUnit(assiette.unit, plafond)
 			} catch (e) {
 				typeWarning(
-					cache._meta.contextRule,
+					cache._meta,
 					"Impossible de convertir l'unité du plafond de la multiplication dans celle de l'assiette",
 					e
 				)

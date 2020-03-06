@@ -2,6 +2,7 @@ import { evaluateControls } from 'Engine/controls'
 import parseRule from 'Engine/parseRule'
 import { chain, path } from 'ramda'
 import { DottedName, EvaluatedRule } from 'Types/rule'
+import { genericError } from './error'
 import { evaluateNode } from './evaluation'
 import { parseReference } from './parseReference'
 import {
@@ -122,9 +123,10 @@ export let getTargets = (target, rules) => {
 	return targets
 }
 
-type CacheMeta = {
+export type CacheMeta = {
 	contextRule: Array<string>
 	defaultUnits: Array<Unit>
+	warnings: Array<string>
 	inversionFail?: {
 		given: string
 		estimated: string
@@ -133,36 +135,43 @@ type CacheMeta = {
 
 export let analyseMany = (
 	parsedRules,
-	targetNames,
+	targetNames: Array<String>,
 	defaultUnits: Array<string> = []
 ) => (situationGate: (name: DottedName) => any) => {
 	// TODO: we should really make use of namespaces at this level, in particular
 	// setRule in Rule.js needs to get smarter and pass dottedName
 	const defaultParsedUnits = defaultUnits.map(unit => parseUnit(unit))
-	let cache = {
-		_meta: { contextRule: [], defaultUnits: defaultParsedUnits } as CacheMeta
+	const cache = {
+		_meta: {
+			contextRule: [],
+			defaultUnits: defaultParsedUnits,
+			warnings: []
+		} as CacheMeta
 	}
 
-	let parsedTargets = targetNames.map(t => {
-			let parsedTarget = findRule(parsedRules, t)
-			if (!parsedTarget)
-				throw new Error(
-					`L'objectif de calcul "${t}" ne semble pas  exister dans la base de règles`
-				)
-			return parsedTarget
-		}),
-		targets = chain(pt => getTargets(pt, parsedRules), parsedTargets).map(
-			(t): EvaluatedRule =>
-				cache[t.dottedName] || // This check exists because it is not done in parseRuleRoot's eval, while it is in parseVariable. This should be merged : we should probably call parseVariable here : targetNames could be expressions (hence with filters) TODO
-				evaluateNode(cache, situationGate, parsedRules, t)
-		)
+	const parsedTargets = targetNames.map(t => {
+		let parsedTarget = findRule(parsedRules, t)
+		if (!parsedTarget)
+			genericError(
+				'Erreur de configuration',
+				`L'objectif de calcul "${t}" ne semble pas exister dans la base de règles`
+			)
+		return parsedTarget
+	})
+	const targets = chain(pt => getTargets(pt, parsedRules), parsedTargets).map(
+		(t): EvaluatedRule =>
+			cache[t.dottedName] || evaluateNode(cache, situationGate, parsedRules, t) // This check exists because it is not done in parseRuleRoot's eval, while it is in parseVariable. This should be merged : we should probably call parseVariable here : targetNames could be expressions (hence with filters) TODO
+	)
 
-	let controls = evaluateControls(cache, situationGate, parsedRules)
+	const controls = evaluateControls(cache, situationGate, parsedRules)
+
+	cache._meta.warnings.forEach(message => console.warn(message))
+
 	return { targets, cache, controls }
 }
 
 export type Analysis = ReturnType<ReturnType<typeof analyse>>
 
-export let analyse = (parsedRules, target, defaultUnits = []) => {
+export let analyse = (parsedRules, target: string, defaultUnits = []) => {
 	return analyseMany(parsedRules, [target], defaultUnits)
 }

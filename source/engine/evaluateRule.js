@@ -98,7 +98,7 @@ export default (cache, situationGate, parsedRules, node) => {
 			nodeValue = convertNodeToUnit(unit, evaluatedFormula).nodeValue
 		} catch (e) {
 			typeWarning(
-				node.dottedName,
+				cache._meta,
 				`L'unité de la règle est incompatible avec celle de sa formule`,
 				e
 			)

@@ -42,7 +42,7 @@ export let evaluateNode = (cache, situationGate, parsedRules, node) => {
 		: simplifyNodeUnit(evaluatedNode)
 	return evaluatedNode
 }
-const sameUnitValues = (explanation, contextRule, mecanismName) => {
+const sameUnitValues = (explanation, cacheMeta, mecanismName) => {
 	const firstNodeWithUnit = explanation.find(node => !!node.unit)
 	if (!firstNodeWithUnit) {
 		return [undefined, explanation.map(({ nodeValue }) => nodeValue)]
@@ -52,7 +52,7 @@ const sameUnitValues = (explanation, contextRule, mecanismName) => {
 			return convertNodeToUnit(firstNodeWithUnit?.unit, node).nodeValue
 		} catch (e) {
 			typeWarning(
-				contextRule,
+				cacheMeta,
 				`Dans le mécanisme ${mecanismName}, les unités des éléments suivants sont incompatibles entre elles : \n\t\t${node?.name ||
 					node?.rawNode}\n\t\t${firstNodeWithUnit?.name ||
 					firstNodeWithUnit?.rawNode}'`,
@@ -73,11 +73,7 @@ export let evaluateArray = (reducer, start) => (
 	let evaluateOne = child =>
 			evaluateNode(cache, situationGate, parsedRules, child),
 		explanation = map(evaluateOne, node.explanation),
-		[unit, values] = sameUnitValues(
-			explanation,
-			cache._meta.contextRule,
-			node.name
-		),
+		[unit, values] = sameUnitValues(explanation, cache._meta, node.name),
 		nodeValue = values.some(value => value === null)
 			? null
 			: reduce(reducer, start, values),
@@ -104,11 +100,7 @@ export let evaluateArrayWithFilter = (evaluationFilter, reducer, start) => (
 			evaluateOne,
 			filter(evaluationFilter(situationGate), node.explanation)
 		),
-		[unit, values] = sameUnitValues(
-			explanation,
-			cache._meta.contextRule,
-			node.name
-		),
+		[unit, values] = sameUnitValues(explanation, cache._meta, node.name),
 		nodeValue = any(equals(null), values)
 			? null
 			: reduce(reducer, start, values),

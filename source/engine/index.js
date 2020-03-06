@@ -21,49 +21,61 @@ let enrichRules = input => {
 	return rulesList.map(enrichRule)
 }
 
-class Engine {
+export class Engine {
 	situation = {}
 	parsedRules
 	constructor(rules = rulesFr) {
-		this.parsedRules = parseAll(rules)
-		this.defaultValues = collectDefaults(rules)
+		try {
+			this.parsedRules = parseAll(rules)
+			this.defaultValues = collectDefaults(rules)
+		} catch (e) {
+			this.error = e
+		}
 	}
 	evaluate(targets, { defaultUnits, situation, withDefaultValues = true }) {
-		this.evaluation = analyseMany(
-			this.parsedRules,
-			targets,
-			defaultUnits
-		)(
-			dottedName =>
-				situation[dottedName] ||
-				(withDefaultValues && this.defaultValues[dottedName])
-		)
-		return this.evaluation.targets.map(({ nodeValue }) => nodeValue)
+		if (this.error) {
+			return null
+		}
+		try {
+			this.evaluation = analyseMany(
+				this.parsedRules,
+				targets,
+				defaultUnits
+			)(
+				dottedName =>
+					situation[dottedName] ||
+					(withDefaultValues && this.defaultValues[dottedName])
+			)
+			return this.evaluation.targets.map(({ nodeValue }) => nodeValue)
+		} catch (e) {
+			this.error = e
+			return null
+		}
 	}
 	getLastEvaluationExplanations() {
 		return this.evaluation
 	}
+	getLastError() {
+		return this.error
+	}
 }
 
-export default {
-	evaluate: (targetInput, input, config, defaultUnits = []) => {
-		let rules = config
-			? [
-					...(config.base ? enrichRules(config.base) : rulesFr),
-					...(config.extra ? enrichRules(config.extra) : [])
-			  ]
-			: rulesFr
+export function evaluate(targetInput, input, config, defaultUnits = []) {
+	let rules = config
+		? [
+				...(config.base ? enrichRules(config.base) : rulesFr),
+				...(config.extra ? enrichRules(config.extra) : [])
+		  ]
+		: rulesFr
 
-		let evaluation = analyseMany(
-			parseAll(rules),
-			Array.isArray(targetInput) ? targetInput : [targetInput],
-			defaultUnits
-		)(inputToStateSelector(rules)(input))
-		if (config?.debug) return evaluation
+	let evaluation = analyseMany(
+		parseAll(rules),
+		Array.isArray(targetInput) ? targetInput : [targetInput],
+		defaultUnits
+	)(inputToStateSelector(rules)(input))
+	if (config?.debug) return evaluation
 
-		let values = evaluation.targets.map(t => t.nodeValue)
+	let values = evaluation.targets.map(t => t.nodeValue)
 
-		return Array.isArray(targetInput) ? values : values[0]
-	},
-	Engine
+	return Array.isArray(targetInput) ? values : values[0]
 }

@@ -80,7 +80,7 @@ const evaluate = (cache, situation, parsedRules, node) => {
 			plancher = convertNodeToUnit(valeur.unit, plancher)
 		} catch (e) {
 			typeWarning(
-				cache._meta.contextRule,
+				cache._meta,
 				"Le plafond / plancher de l'encadrement a une unité incompatible avec celle de la valeur à encadrer",
 				e
 			)

@@ -82,7 +82,7 @@ const getApplicableReplacements = (
 			const replacedRuleUnit = getNodeDefaultUnit(rule, cache)
 			if (!areUnitConvertible(replacementNode.unit, replacedRuleUnit)) {
 				typeWarning(
-					contextRuleName,
+					cache._meta,
 					`L'unité de la règle de remplacement n'est pas compatible avec celle de la règle remplacée ${rule.dottedName}`
 				)
 			}
@@ -260,7 +260,7 @@ const evaluateTransforms = (originalEval, rule, parseResult) => (
 			return convertNodeToUnit(unit, filteredNode)
 		} catch (e) {
 			typeWarning(
-				cache._meta.contextRule,
+				cache._meta,
 				`Impossible de convertir la reference '${filteredNode.name}'`,
 				e
 			)
