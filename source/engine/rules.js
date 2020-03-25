@@ -28,7 +28,7 @@ import {
 import translations from '../locales/rules-en.yaml'
 // TODO - should be in UI, not engine
 import { capitalise0, coerceArray } from '../utils'
-import { syntaxError, warning } from './error'
+import { compilationError, syntaxError, warning } from './error'
 
 /***********************************
 Functions working on one rule */
@@ -109,8 +109,9 @@ export let ruleParents = dottedName => {
 		.map(nbEl => take(nbEl)(fragments))
 		.reverse() //  -> [ [CDD . événements . rupture], [CDD . événements], [CDD] ]
 }
-/* Les variables peuvent être exprimées dans la formule d'une règle relativement à son propre espace de nom, pour une plus grande lisibilité. Cette fonction résoud cette ambiguité.
- */
+// Les variables peuvent être exprimées dans la formule d'une règle relativement
+// à son propre espace de nom, pour une plus grande lisibilité. Cette effectue
+// la résolution de nom dans un espace de nom donné.
 export let disambiguateRuleReference = (
 	allRules,
 	{ dottedName },
@@ -137,8 +138,7 @@ export let disambiguateRuleReference = (
 		return found.dottedName
 	}
 
-	throw new Error(`La référence '${partialName}' est introuvable.
-Vérifiez que l'orthographe et l'espace de nom sont corrects`)
+	compilationError(dottedName, `La référence '${partialName}' est introuvable`)
 }
 
 export let collectDefaults = pipe(

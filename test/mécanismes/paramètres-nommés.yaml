@@ -1,0 +1,16 @@
+cotisation:
+  formule:
+    multiplication:
+      ~> assiette: 1000 €
+      ~> taux = taux employeur: 4%
+  exemples:
+    - valeur attendue: 40
+
+    - situation:
+        cotisation . assiette: 2000
+      valeur attendue: 80
+
+    - situation:
+        cotisation . assiette: 3000
+        cotisation . taux employeur: 3
+      valeur attendue: 90

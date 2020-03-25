@@ -1,8 +1,9 @@
 import { ShowValuesConsumer } from 'Components/rule/ShowValuesContext'
 import RuleLink from 'Components/RuleLink'
-import { evolve, map } from 'ramda'
+import { evolve, lensPath, map, set } from 'ramda'
 import React from 'react'
 import { Trans } from 'react-i18next'
+import { Rule } from 'Types/rule'
 import { coerceArray } from '../utils'
 import evaluate from './evaluateRule'
 import { evaluateNode, makeJsx, mergeAllMissing } from './evaluation'
@@ -10,8 +11,43 @@ import { Node } from './mecanismViews/common'
 import { parse } from './parse'
 import { disambiguateRuleReference, findParentDependencies } from './rules'
 
-export default (rules, rule, parsedRules) => {
+export default (rules, rule: Rule, parsedRules) => {
+	// We traverse the rule YAML tree in order to extrat named parameters into
+	// their own dedicated rules, and replace the inline definition with a
+	// reference to the newly created rule.
+	const extractInlinedNames = (context: Array<string | number> = []) => ([
+		key,
+		value
+	]: [string, Object]) => {
+		if (key.startsWith('~>')) {
+			const [argumentName, argumentCustomName] = key
+				.replace('~>', '')
+				.split('=')
+				.map(x => x.trim())
+			const extractedReferenceName =
+				rule.dottedName + ' . ' + (argumentCustomName || argumentName)
+			rules.push({
+				dottedName: extractedReferenceName,
+				formule: value
+			})
+			rule = set(
+				lensPath([...context, argumentName]),
+				extractedReferenceName,
+				rule
+			)
+		} else if (Array.isArray(value)) {
+			value.forEach((content: Object, i) =>
+				Object.entries(content).forEach(
+					extractInlinedNames([...context, key, i])
+				)
+			)
+		} else if (value && typeof value === 'object') {
+			Object.entries(value).forEach(extractInlinedNames([...context, key]))
+		}
+	}
+
 	if (parsedRules[rule.dottedName]) return parsedRules[rule.dottedName]
+	Object.entries(rule).forEach(extractInlinedNames())
 
 	parsedRules[rule.dottedName] = 'being parsed'
 	/*

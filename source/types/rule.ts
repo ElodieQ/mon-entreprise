@@ -6,6 +6,7 @@ export type Rule = {
 	question?: string
 	unité: string
 	unit: string
+	defaultUnit: string[]
 	name?: string
 	summary?: string
 	title?: string
